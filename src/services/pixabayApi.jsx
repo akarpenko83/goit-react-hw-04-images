@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-export default async function fetchPhotos({
+export default async function fetchPhotos(
     searchQuery,
     page,
     per_page,
-}) {
+) {
     const url = 'https://pixabay.com/api/';
     const axiosParams = {
         params: {
@@ -20,17 +20,10 @@ export default async function fetchPhotos({
     };
     try {
         const response = await axios.get(url, axiosParams);
+        // console.log(response.data);
         const totalPages = Math.ceil(
             response.data.totalHits /
                 axiosParams.params.per_page,
-        );
-        console.log(
-            'totalPages: ',
-            totalPages,
-            'current page: ',
-            page,
-            'per page: ',
-            per_page,
         );
 
         if (response.data.hits.length === 0) {
@@ -43,13 +36,14 @@ export default async function fetchPhotos({
             Notify.warning(
                 "We're sorry, but you've reached the end of search results.",
             );
-            // ButtonLoadMore.disable();
         }
         Notify.info(
             `Hooray! We found ${response.data.totalHits} images on ${totalPages} pages. Current page: ${page}`,
         );
         return response.data;
-    } catch (error) {}
+    } catch (error) {
+        return;
+    }
 }
 
 function encodeQuery(searchQuery) {

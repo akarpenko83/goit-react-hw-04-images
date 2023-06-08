@@ -5,6 +5,7 @@ import Searchbar from './Searchbar/Searchbar';
 import fetchPhotos from 'services/pixabayApi';
 import ImageGallery from './ImageGallery/ImageGallery';
 import LoadMoreBtn from './Button/LoadMoreBtn';
+import { useState, useEffect } from 'react';
 
 // const pixabayApi = new PixabayApi();
 
@@ -14,133 +15,117 @@ const STATUS = {
     RESOLVED: 'resolved',
     REJECTED: 'rejected',
 };
-class App extends React.PureComponent {
-    state = {
-        showModal: false,
-        searchQuery: null,
-        pixabay: [],
-        picLink: null,
-        page: 1,
-        per_page: 12,
-        totalPages: 0,
-        status: STATUS.IDLE,
+const App = () => {
+    const [showModal, setShowModal] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(null);
+    const [pixabay, setPixabay] = useState([]);
+    const [picLink, setPicLink] = useState(null);
+    const [page, setPage] = useState(1);
+    const [per_page, setPerPage] = useState(12);
+
+    const [totalHits, setTotalHits] = useState(0);
+    const [status, setStatus] = useState(STATUS.IDLE);
+
+    const onSubmit = queryResult => {
+        setSearchQuery(queryResult);
+        setPixabay([]);
+        setPicLink(null);
+        setPage(1);
+        setPerPage(12);
+        setTotalHits(0);
+        setStatus(STATUS.IDLE);
     };
 
-    onSubmit = queryResult => {
-        this.setState({
-            searchQuery: queryResult,
-            pixabay: [],
-            picLink: null,
-            page: 1,
-            per_page: 12,
-            totalHits: 0,
-            status: STATUS.IDLE,
-        });
-    };
-    async componentDidUpdate(prevProps, prevState) {
-        if (
-            prevState.page !== this.state.page ||
-            prevState.searchQuery !== this.state.searchQuery
-        ) {
-            try {
-                Loading.arrows();
-                const response = await fetchPhotos(
-                    this.state,
-                );
-                await this.setState({
-                    // page: 1,
-                    pixabay: [
-                        ...this.state.pixabay,
+    useEffect(() => {
+        if (!searchQuery) {
+            return;
+        } else {
+            Loading.arrows();
+
+            fetchPhotos(searchQuery, page, per_page)
+                .then(response => {
+                    if (!response) {
+                        throw new Error();
+                    }
+                    setPixabay(pixabay => [
+                        ...pixabay,
                         ...response.hits,
-                    ],
-                    totalHits: response.totalHits,
-                    status: STATUS.RESOLVED,
-                });
-                console.log(
-                    'response from API: ',
-                    response,
-                );
-            } catch (error) {
-                console.log(error);
-                this.setState({
-                    pixabay: [],
-                    page: 1,
-                    showModal: true,
-                    picLink:
+                    ]);
+                    setTotalHits(response.totalHits);
+                    setStatus(STATUS.RESOLVED);
+                    // console.log(response.hits);
+                    // console.log(pixabay);
+                    // console.log(
+                    //     'response from API: ',
+                    //     response,
+                    // );
+                })
+                .catch(error => {
+                    console.log(error);
+                    setPixabay([]);
+                    setPage(1);
+                    setSearchQuery('');
+                    setShowModal(true);
+                    setPicLink(
                         'https://www.cloudways.com/blog/wp-content/uploads/wordpress-404-error.jpg',
-                    status: STATUS.REJECTED,
-                });
-            } finally {
-                Loading.remove();
-            }
+                    );
+                    setStatus(STATUS.REJECTED);
+                })
+                .finally(Loading.remove());
         }
-    }
+    }, [page, per_page, searchQuery]);
 
-    onPictureClick = picture => {
-        this.setState({
-            picLink: picture,
-            showModal: true,
-        });
+    const onPictureClick = picture => {
+        setPicLink(picture);
+
+        setShowModal(true);
     };
-    modalClose = () => {
-        this.setState({ showModal: false });
+    const modalClose = () => {
+        setShowModal(false);
     };
-    onLoadMore = () => {
-        console.log(this.state.page);
-        this.setState(prevState => ({
-            page: prevState.page + 1,
-        }));
+    const onLoadMore = () => {
+        console.log(page);
+        console.log(pixabay);
+        console.log(searchQuery);
+        setPage(prevPage => prevPage + 1);
     };
 
-    getEndOfQuery() {
-        const totalPages = Math.ceil(
-            this.state.totalHits / this.state.per_page,
-        );
-        console.log(
-            this.state.page,
-            ' of pages ',
-            totalPages,
-        );
-        if (totalPages !== this.state.page) {
+    const getEndOfQuery = () => {
+        const totalPages = Math.ceil(totalHits / per_page);
+        console.log(page, ' of pages ', totalPages);
+        if (totalPages !== page) {
             return true;
         }
         return false;
-    }
+    };
 
-    render() {
-        const { showModal, pixabay, picLink, status } =
-            this.state;
-        return (
-            <>
-                <Searchbar onSubmit={this.onSubmit} />
-                {showModal && (
-                    <Modal
-                        closeModal={this.modalClose}
-                        picSrc={picLink}
-                    />
-                )}
-
-                <ImageGallery
-                    pictures={pixabay}
-                    onPictureClick={this.onPictureClick}
+    return (
+        <>
+            <Searchbar onSubmit={onSubmit} />
+            {showModal && (
+                <Modal
+                    closeModal={modalClose}
+                    picSrc={picLink}
                 />
+            )}
 
-                {status === STATUS.RESOLVED &&
-                    this.getEndOfQuery() && (
-                        <LoadMoreBtn
-                            onLoadMore={this.onLoadMore}
-                        />
-                    )}
-                {status === STATUS.REJECTED &&
-                    showModal && (
-                        <Modal
-                            closeModal={this.modalClose}
-                            picSrc={picLink}
-                        />
-                    )}
-            </>
-        );
-    }
-}
+            <ImageGallery
+                pictures={pixabay}
+                onPictureClick={onPictureClick}
+            />
+
+            {status === STATUS.RESOLVED &&
+                getEndOfQuery() && (
+                    <LoadMoreBtn onLoadMore={onLoadMore} />
+                )}
+            {status === STATUS.REJECTED && showModal && (
+                <Modal
+                    closeModal={modalClose}
+                    picSrc={picLink}
+                />
+            )}
+        </>
+    );
+};
 
 export default App;
