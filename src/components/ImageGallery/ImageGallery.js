@@ -1,5 +1,3 @@
-// import ImageGalleryItem from './ImageGallery';
-
 import {
     ImageGalleryContainer,
     ImageGalleryItemContainer,

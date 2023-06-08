@@ -1,51 +1,39 @@
-import { Component } from 'react';
-import { createPortal } from 'react-dom';
 import { ModalContent, Overlay } from './Modal.styled';
-// import { Loading } from 'notiflix/build/notiflix-loading-aio';
+import { useEffect } from 'react';
 
-const modalRoot = document.querySelector('#modal-root');
-
-export default class Modal extends Component {
-    componentDidMount() {
-        window.addEventListener(
-            'keydown',
-            this.handleEscKey,
-        );
-        document.body.style.overflow = 'hidden';
-    }
-    componentWillUnmount() {
-        window.removeEventListener(
-            'keydown',
-            this.handleEscKey,
-        );
-        document.body.style.overflow = 'visible';
-    }
-
-    handleEscKey = evt => {
-        if (evt.code === 'Escape') {
-            console.log('ESC');
-            this.props.closeModal();
-        }
-    };
-
-    handleBackdropClick = evt => {
+const Modal = ({ picSrc, closeModal }) => {
+    const handleBackdropClick = evt => {
         if (evt.target === evt.currentTarget) {
-            this.props.closeModal();
+            closeModal();
         }
     };
+    useEffect(() => {
+        const handleEscKey = evt => {
+            if (evt.code === 'Escape') {
+                console.log('ESC');
+                closeModal();
+            }
+        };
 
-    render() {
-        return createPortal(
-            <Overlay onClick={this.handleBackdropClick}>
-                <ModalContent>
-                    <img
-                        src={this.props.picSrc}
-                        alt="cat"
-                    />
-                    {this.props.children}
-                </ModalContent>
-            </Overlay>,
-            modalRoot,
-        );
-    }
-}
+        window.addEventListener('keydown', handleEscKey);
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            window.removeEventListener(
+                'keydown',
+                handleEscKey,
+            );
+            document.body.style.overflow = 'visible';
+        };
+    }, [closeModal, picSrc]);
+
+    return (
+        <Overlay onClick={handleBackdropClick}>
+            <ModalContent>
+                <img src={picSrc} alt="cat" />
+            </ModalContent>
+        </Overlay>
+    );
+};
+
+export default Modal;
