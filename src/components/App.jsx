@@ -21,8 +21,6 @@ const App = () => {
     const [pixabay, setPixabay] = useState([]);
     const [picLink, setPicLink] = useState(null);
     const [page, setPage] = useState(1);
-    const [per_page, setPerPage] = useState(12);
-
     const [totalHits, setTotalHits] = useState(0);
     const [status, setStatus] = useState(STATUS.IDLE);
 
@@ -31,7 +29,7 @@ const App = () => {
         setPixabay([]);
         setPicLink(null);
         setPage(1);
-        setPerPage(12);
+
         setTotalHits(0);
         setStatus(STATUS.IDLE);
     };
@@ -39,41 +37,40 @@ const App = () => {
     useEffect(() => {
         if (!searchQuery) {
             return;
-        } else {
-            Loading.arrows();
-
-            fetchPhotos(searchQuery, page, per_page)
-                .then(response => {
-                    if (!response) {
-                        throw new Error();
-                    }
-                    setPixabay(pixabay => [
-                        ...pixabay,
-                        ...response.hits,
-                    ]);
-                    setTotalHits(response.totalHits);
-                    setStatus(STATUS.RESOLVED);
-                    // console.log(response.hits);
-                    // console.log(pixabay);
-                    // console.log(
-                    //     'response from API: ',
-                    //     response,
-                    // );
-                })
-                .catch(error => {
-                    console.log(error);
-                    setPixabay([]);
-                    setPage(1);
-                    setSearchQuery('');
-                    setShowModal(true);
-                    setPicLink(
-                        'https://www.cloudways.com/blog/wp-content/uploads/wordpress-404-error.jpg',
-                    );
-                    setStatus(STATUS.REJECTED);
-                })
-                .finally(Loading.remove());
         }
-    }, [page, per_page, searchQuery]);
+        Loading.arrows();
+
+        fetchPhotos(searchQuery, page)
+            .then(response => {
+                if (!response) {
+                    throw new Error();
+                }
+                setPixabay(pixabay => [
+                    ...pixabay,
+                    ...response.hits,
+                ]);
+                setTotalHits(response.totalHits);
+                setStatus(STATUS.RESOLVED);
+                // console.log(response.hits);
+                // console.log(pixabay);
+                // console.log(
+                //     'response from API: ',
+                //     response,
+                // );
+            })
+            .catch(error => {
+                console.log(error);
+                setPixabay([]);
+                setPage(1);
+                setSearchQuery('');
+                setShowModal(true);
+                setPicLink(
+                    'https://www.cloudways.com/blog/wp-content/uploads/wordpress-404-error.jpg',
+                );
+                setStatus(STATUS.REJECTED);
+            })
+            .finally(Loading.remove());
+    }, [page, searchQuery]);
 
     const onPictureClick = picture => {
         setPicLink(picture);
@@ -91,12 +88,9 @@ const App = () => {
     };
 
     const getEndOfQuery = () => {
-        const totalPages = Math.ceil(totalHits / per_page);
+        const totalPages = Math.ceil(totalHits / 12);
         console.log(page, ' of pages ', totalPages);
-        if (totalPages !== page) {
-            return true;
-        }
-        return false;
+        return totalPages !== page;
     };
 
     return (

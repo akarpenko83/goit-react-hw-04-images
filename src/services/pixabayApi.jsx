@@ -4,7 +4,6 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 export default async function fetchPhotos(
     searchQuery,
     page,
-    per_page,
 ) {
     const url = 'https://pixabay.com/api/';
     const axiosParams = {
@@ -15,7 +14,7 @@ export default async function fetchPhotos(
             orientation: 'horizontal',
             safesearch: 'false',
             page: page,
-            per_page: per_page,
+            per_page: 12,
         },
     };
     try {

@@ -25,7 +25,7 @@ const Modal = ({ picSrc, closeModal }) => {
             );
             document.body.style.overflow = 'visible';
         };
-    }, [closeModal, picSrc]);
+    }, [closeModal]);
 
     return (
         <Overlay onClick={handleBackdropClick}>
